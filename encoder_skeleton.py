@@ -2,15 +2,6 @@
 """
 Esqueleto del Codificador Educativo de Instrucciones RISC-V.
 CE4301 Arquitectura de Computadores I — Proyecto Individual — 2026-II
-
-Este esqueleto ya implementa el contrato de línea de comandos y de salida
-requerido por la especificación. Usted debe completar las dos funciones
-marcadas con TODO; puede modificar el resto del archivo si lo necesita,
-siempre que se preserve el contrato de invocación y la línea "HEX: 0x...".
-
-No es obligatorio usar este esqueleto ni Python: puede implementar su
-propia herramienta desde cero, en el lenguaje que prefiera, siempre que
-respete el mismo contrato (ver especificación, sección "Modo de operación").
 """
 import re
 import sys
@@ -294,14 +285,14 @@ def explain_instruction(instruction: str, word: int) -> str:
         imm_b, rs1_b, f3_b, rd_b, op_b = (
             bin_str[0:12], bin_str[12:17], bin_str[17:20], bin_str[20:25], bin_str[25:32]
         )
-        lines.append("+--------------+-------+--------+-------+---------+")
-        lines.append("| imm[11:0]    | rs1   | funct3 | rd    | opcode  |")
-        lines.append("| [31:20]      | [19:15]| [14:12] | [11:7]| [6:0]   |")
-        lines.append("+--------------+-------+--------+-------+---------+")
+        lines.append("+--------------+---------+----------+--------+---------+")
+        lines.append("|  imm[11:0]   |   rs1   |  funct3  |   rd   |  opcode |")
+        lines.append("|   [31:20]    | [19:15] |  [14:12] | [11:7] |  [6:0]  |")
+        lines.append("+--------------+---------+----------+--------+---------+")
         lines.append(f"| {imm_b} | {rs1_b} | {f3_b}    | {rd_b} | {op_b} |")
         lines.append(f"| ({parsed['imm']:<10}) | ({int(rs1_b,2):<4})| ({int(f3_b,2):<5}) | ({int(rd_b,2):<4})| ({int(op_b,2):<7})|")
-        lines.append("+--------------+-------+--------+-------+---------+")
-        lines.append("\n--- Explicación de los Campos ---")
+        lines.append("+--------------+---------+----------+--------+---------+")
+        lines.append("\n--- Explicación de los campos ---")
         lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para la categoría tipo I.")
         lines.append(f"* rd (x{parsed['rd']} / {rd_b}): Registro destino del resultado o dato cargado.")
         lines.append(f"* funct3 ({f3_b}): Selecciona la operación o tamaño de carga (lb, lw, addi, andi).")
@@ -312,13 +303,13 @@ def explain_instruction(instruction: str, word: int) -> str:
         imm_11_5_b, rs2_b, rs1_b, f3_b, imm_4_0_b, op_b = (
             bin_str[0:7], bin_str[7:12], bin_str[12:17], bin_str[17:20], bin_str[20:25], bin_str[25:32]
         )
-        lines.append("+----------+-------+-------+--------+-----------+---------+")
-        lines.append("| imm[11:5]| rs2   | rs1   | funct3 | imm[4:0]  | opcode  |")
-        lines.append("| [31:25]  | [24:20]| [19:15]| [14:12] | [11:7]    | [6:0]   |")
-        lines.append("+----------+-------+-------+--------+-----------+---------+")
+        lines.append("+-----------+---------+---------+----------+-----------+---------+")
+        lines.append("| imm[11:5] |   rs2   |   rs1   |  funct3  |  imm[4:0] |  opcode |")
+        lines.append("|  [31:25]  | [24:20] | [19:15] |  [14:12] |   [11:7]  |  [6:0]  |")
+        lines.append("+-----------+---------+---------+----------+-----------+---------+")
         lines.append(f"| {imm_11_5_b}  | {rs2_b} | {rs1_b} | {f3_b}    | {imm_4_0_b}     | {op_b} |")
-        lines.append(f"+----------+-------+-------+--------+-----------+---------+")
-        lines.append("\n--- Explicación de los Campos ---")
+        lines.append(f"+-----------+---------+---------+----------+-----------+---------+")
+        lines.append("\n--- Explicación de los campos ---")
         lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para instrucciones de almacenamiento (Store).")
         lines.append(f"* imm[11:5] e imm[4:0]: Inmediato dividido que forma el desplazamiento ({parsed['imm']}).")
         lines.append(f"* funct3 ({f3_b}): Especifica el tamaño de dato a guardar (sb, sw).")
@@ -329,13 +320,13 @@ def explain_instruction(instruction: str, word: int) -> str:
         imm12_b, imm10_5_b, rs2_b, rs1_b, f3_b, imm4_1_b, imm11_b, op_b = (
             bin_str[0], bin_str[1:7], bin_str[7:12], bin_str[12:17], bin_str[17:20], bin_str[20:24], bin_str[24], bin_str[25:32]
         )
-        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
-        lines.append("|i12|i[10:5] | rs2   | rs1   | funct3 |i[4:1]|i11| opcode  |")
-        lines.append("|31 | [30:25]| [24:20]| [19:15]| [14:12] |[11:8]| 7 | [6:0]   |")
-        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
+        lines.append("+---------+-----------+---------+---------+----------+-----------+---------+--------+")
+        lines.append("| imm[12] | imm[10:5] |   rs2   |   rs1   |  funct3  |  imm[4:1] | imm[11] | opcode |")
+        lines.append("|   31    |  [30:25]  | [24:20] | [19:15] |  [14:12] |   [11:8]  |    7    |  [6:0] |")
+        lines.append("+---------+-----------+---------+---------+----------+-----------+---------+--------+")
         lines.append(f"| {imm12_b} | {imm10_5_b} | {rs2_b} | {rs1_b} | {f3_b}    | {imm4_1_b} | {imm11_b} | {op_b} |")
-        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
-        lines.append("\n--- Explicación de los Campos ---")
+        lines.append("+---------+-----------+---------+---------+----------+-----------+---------+---------+")
+        lines.append("\n--- Explicación de los campos ---")
         lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para saltos condicionales (Branch).")
         lines.append(f"* Inmediato reordenado: Representa el desplazamiento relativo de salto ({parsed['imm']} bytes).")
         lines.append(f"* funct3 ({f3_b}): Especifica la condición del salto (beq, bne).")
