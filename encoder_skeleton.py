@@ -146,18 +146,56 @@ def parse_instruction(instruction: str) -> dict:
 
 def encode_instruction(instruction: str) -> int:
     """
-    Recibe una instrucción como texto, p. ej. "add x5, x6, x7", y debe
-    retornar su codificación de 32 bits como entero (0 <= valor < 2**32).
+    Recibe una instrucción como texto, p. ej. "add x5, x6, x7", y
+    retorna su codificación de 32 bits como entero (0 <= valor < 2**32).
 
-    Debe soportar únicamente las instrucciones en SOPORTADAS. Los valores
-    de opcode/funct3/funct7 de cada una NO se proveen aquí: deben
-    investigarse en el manual oficial de la ISA RISC-V (ver referencia en
-    la especificación) y documentarse en el README.
+    Soporta únicamente las instrucciones en SOPORTADAS. 
     """
-    # TODO: implementar. Sugerencia: parsear el mnemónico y los operandos,
-    # despachar según el formato (R/I/S/B), y ensamblar los campos con
-    # operaciones de bits.
-    raise NotImplementedError("encode_instruction: pendiente de implementar")
+    parsed = parse_instruction(instruction)
+    mnemonic = parsed["mnemonic"]
+    fmt = parsed["fmt"]
+    info = ISA[mnemonic]
+
+    # Codificación de Formato R
+    if fmt == "R":
+        opcode = info["opcode"]
+        funct3 = info["funct3"]
+        funct7 = info["funct7"]
+        rd = parsed["rd"]
+        rs1 = parsed["rs1"]
+        rs2 = parsed["rs2"]
+
+        word = ((funct7 & 0x7F) << 25) | \
+               ((rs2 & 0x1F) << 20) | \
+               ((rs1 & 0x1F) << 15) | \
+               ((funct3 & 0x07) << 12) | \
+               ((rd & 0x1F) << 7) | \
+               (opcode & 0x7F)
+        return word
+
+    # Codificación de Formato I (Aritmético y Cargas)
+    elif fmt == "I":
+        opcode = info["opcode"]
+        funct3 = info["funct3"]
+        rd = parsed["rd"]
+        rs1 = parsed["rs1"]
+        imm = parsed["imm"]
+
+        # Validación del rango representable para inmediatos de 12 bits con signo
+        if not (-2048 <= imm <= 2047):
+            raise ValueError(f"Inmediato está fuera de rango (-2048 a 2047): {imm}")
+
+        imm_12 = imm & 0xFFF  # Conversión a complemento a 2 de 12 bits
+
+        word = (imm_12 << 20) | \
+               ((rs1 & 0x1F) << 15) | \
+               ((funct3 & 0x07) << 12) | \
+               ((rd & 0x1F) << 7) | \
+               (opcode & 0x7F)
+        return word
+
+    else:
+        raise NotImplementedError(f"Formato {fmt} aún no implementado")
 
 
 def explain_instruction(instruction: str, word: int) -> str:
