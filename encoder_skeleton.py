@@ -12,6 +12,7 @@ No es obligatorio usar este esqueleto ni Python: puede implementar su
 propia herramienta desde cero, en el lenguaje que prefiera, siempre que
 respete el mismo contrato (ver especificación, sección "Modo de operación").
 """
+import re
 import sys
 
 SOPORTADAS = ["add", "sub", "and", "or", "addi", "andi",
@@ -58,6 +59,89 @@ def parse_register(reg_str: str) -> int:
     if reg in ABI_REGISTER_MAP:
         return ABI_REGISTER_MAP[reg]
     raise ValueError(f"Registro no valido: '{reg_str}'")
+
+def parse_instruction(instruction: str) -> dict:
+    """
+    Parsea una cadena de instrucción RISC-V y extrae el mnemónico, formato y operandos.
+    Retorna un diccionario con los enteros correspondientes a cada campo.
+    """
+    text = instruction.strip()
+    parts = text.split(None, 1)
+    if not parts:
+        raise ValueError("Instrucción vacía")
+
+    mnemonic = parts[0].lower()
+    if mnemonic not in ISA:
+        raise ValueError(f"Instrucción no soportada: '{mnemonic}'")
+
+    fmt = ISA[mnemonic]["fmt"]
+    args_str = parts[1] if len(parts) > 1 else ""
+
+    # Formato R: op rd, rs1, rs2
+    if fmt == "R":
+        args = [a.strip() for a in args_str.split(",") if a.strip()]
+        if len(args) != 3:
+            raise ValueError(f"En el formato R se requiere 3 operandos, se recibieron {len(args)}")
+        return {
+            "mnemonic": mnemonic,
+            "fmt": fmt,
+            "rd": parse_register(args[0]),
+            "rs1": parse_register(args[1]),
+            "rs2": parse_register(args[2]),
+        }
+
+    # Formato I: Aritmético (rd, rs1, imm) o Carga (rd, imm(rs1))
+    elif fmt == "I":
+        if mnemonic in ["lw", "lb"]:
+            match = re.match(r"^\s*([^,]+)\s*,\s*([+-]?\d+)\s*\(\s*([^)]+)\s*\)\s*$", args_str)
+            if not match:
+                raise ValueError(f"Sintaxis invalida para {mnemonic}: '{args_str}'")
+            return {
+                "mnemonic": mnemonic,
+                "fmt": fmt,
+                "rd": parse_register(match.group(1)),
+                "rs1": parse_register(match.group(3)),
+                "imm": int(match.group(2)),
+            }
+        else:
+            args = [a.strip() for a in args_str.split(",") if a.strip()]
+            if len(args) != 3:
+                raise ValueError(f"En el formato I aritmético se requiere 3 operandos, se recibieron {len(args)}")
+            return {
+                "mnemonic": mnemonic,
+                "fmt": fmt,
+                "rd": parse_register(args[0]),
+                "rs1": parse_register(args[1]),
+                "imm": int(args[2]),
+            }
+
+    # Formato S: op rs2, imm(rs1)
+    elif fmt == "S":
+        match = re.match(r"^\s*([^,]+)\s*,\s*([+-]?\d+)\s*\(\s*([^)]+)\s*\)\s*$", args_str)
+        if not match:
+            raise ValueError(f"Sintaxis invalida para {mnemonic}: '{args_str}'")
+        return {
+            "mnemonic": mnemonic,
+            "fmt": fmt,
+            "rs2": parse_register(match.group(1)),
+            "rs1": parse_register(match.group(3)),
+            "imm": int(match.group(2)),
+        }
+
+    # Formato B: op rs1, rs2, imm
+    elif fmt == "B":
+        args = [a.strip() for a in args_str.split(",") if a.strip()]
+        if len(args) != 3:
+            raise ValueError(f"En el formato B se requiere 3 operandos, se recibieron {len(args)}")
+        return {
+            "mnemonic": mnemonic,
+            "fmt": fmt,
+            "rs1": parse_register(args[0]),
+            "rs2": parse_register(args[1]),
+            "imm": int(args[2]),
+        }
+
+    raise ValueError(f"Formato no reconocido: {fmt}")
 
 
 def encode_instruction(instruction: str) -> int:
