@@ -194,8 +194,57 @@ def encode_instruction(instruction: str) -> int:
                (opcode & 0x7F)
         return word
 
-    else:
-        raise NotImplementedError(f"Formato {fmt} aún no implementado")
+# Codificación de Formato S (Almacenamiento)
+    elif fmt == "S":
+        opcode = info["opcode"]
+        funct3 = info["funct3"]
+        rs1 = parsed["rs1"]
+        rs2 = parsed["rs2"]
+        imm = parsed["imm"]
+
+        if not (-2048 <= imm <= 2047):
+            raise ValueError(f"El inmediato está fuera de rango (-2048 a 2047): {imm}")
+
+        imm_12 = imm & 0xFFF
+        imm_11_5 = (imm_12 >> 5) & 0x7F
+        imm_4_0 = imm_12 & 0x1F
+
+        return ((imm_11_5 & 0x7F) << 25) | \
+               ((rs2 & 0x1F) << 20) | \
+               ((rs1 & 0x1F) << 15) | \
+               ((funct3 & 0x07) << 12) | \
+               ((imm_4_0 & 0x1F) << 7) | \
+               (opcode & 0x7F)
+
+    # Codificación de Formato B (Saltos condicionales)
+    elif fmt == "B":
+        opcode = info["opcode"]
+        funct3 = info["funct3"]
+        rs1 = parsed["rs1"]
+        rs2 = parsed["rs2"]
+        imm = parsed["imm"]
+
+        if not (-4096 <= imm <= 4095):
+            raise ValueError(f"El inmediato de salto fuera de rango (-4096 a 4095): {imm}")
+        if imm % 2 != 0:
+            raise ValueError(f"El inmediato de salto debe ser par (alineado a 2 bytes): {imm}")
+
+        imm_13 = imm & 0x1FFF
+        imm_12 = (imm_13 >> 12) & 0x1
+        imm_11 = (imm_13 >> 11) & 0x1
+        imm_10_5 = (imm_13 >> 5) & 0x3F
+        imm_4_1 = (imm_13 >> 1) & 0x0F
+
+        return (imm_12 << 31) | \
+               (imm_10_5 << 25) | \
+               ((rs2 & 0x1F) << 20) | \
+               ((rs1 & 0x1F) << 15) | \
+               ((funct3 & 0x07) << 12) | \
+               (imm_4_1 << 8) | \
+               (imm_11 << 7) | \
+               (opcode & 0x7F)
+
+    raise ValueError(f"Formato desconocido: {fmt}")
 
 
 def explain_instruction(instruction: str, word: int) -> str:
