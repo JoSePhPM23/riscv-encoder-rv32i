@@ -249,15 +249,99 @@ def encode_instruction(instruction: str) -> int:
 
 def explain_instruction(instruction: str, word: int) -> str:
     """
-    Debe retornar un texto (para imprimirse en pantalla) que muestre, de
+    Retorna un texto (para imprimirse en pantalla) que muestra, de
     forma visual, los 32 bits de 'word' divididos en los campos del
     formato correspondiente (R, I, S o B) — indicando el rango de bits y
     el valor de cada campo — junto con una breve explicación de cada uno.
     El formato visual (colores, tabla, arte ASCII, etc.) queda a su
     criterio, siempre que sea claro.
     """
-    # TODO: implementar.
-    raise NotImplementedError("explain_instruction: pendiente de implementar")
+    parsed = parse_instruction(instruction)
+    mnemonic = parsed["mnemonic"]
+    fmt = parsed["fmt"]
+    bin_str = f"{word:032b}"
+    hex_str = f"0x{word:08x}"
+
+    lines = []
+    lines.append("=" * 80)
+    lines.append(f"DECODIFICACIÓN Y EXPLICACIÓN: {instruction}")
+    lines.append("=" * 80)
+    lines.append(f"Formato identificado: Tipo {fmt}")
+    lines.append(f"Codificación hexadecimal: {hex_str}")
+    lines.append(f"Palabra binaria (32 bits): {bin_str[:7]} {bin_str[7:12]} {bin_str[12:17]} {bin_str[17:20]} {bin_str[20:25]} {bin_str[25:]}")
+    lines.append("\n--- Desglose visual de campos ---")
+
+    if fmt == "R":
+        f7_b, rs2_b, rs1_b, f3_b, rd_b, op_b = (
+            bin_str[0:7], bin_str[7:12], bin_str[12:17], bin_str[17:20], bin_str[20:25], bin_str[25:32]
+        )
+        lines.append("+----------+---------+---------+---------+--------+----------+")
+        lines.append("|  funct7  |   rs2   |   rs1   | funct3  |   rd   |  opcode  |")
+        lines.append("| [31:25]  | [24:20] | [19:15] | [14:12] | [11:7] |  [6:0]   |")
+        lines.append("+----------+---------+---------+---------+--------+----------+")
+        lines.append(f"| {f7_b}  | {rs2_b}   | {rs1_b}   | {f3_b}     | {rd_b}  | {op_b}  |")
+        lines.append(f"| ({int(f7_b,2):<7})| ({int(rs2_b,2):<4})  | ({int(rs1_b,2):<4})  | ({int(f3_b,2):<5}) | ({int(rd_b,2):<4}) | ({int(op_b,2):<7})|")
+        lines.append("+----------+---------+---------+---------+--------+----------+")
+        lines.append("\n--- Explicación de los campos ---")
+        lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode de instrucciones tipo R (operaciones aritméticas/lógicas en registros).")
+        lines.append(f"* rd (x{parsed['rd']} / {rd_b}): Registro destino donde se almacenará el resultado.")
+        lines.append(f"* funct3 ({f3_b}): Especifica la operación dentro de la familia tipo R.")
+        lines.append(f"* rs1 (x{parsed['rs1']} / {rs1_b}): Primer registro fuente.")
+        lines.append(f"* rs2 (x{parsed['rs2']} / {rs2_b}): Segundo registro fuente.")
+        lines.append(f"* funct7 ({f7_b}): Modificador adicional que diferencia operaciones (ej. add vs sub).")
+
+    elif fmt == "I":
+        imm_b, rs1_b, f3_b, rd_b, op_b = (
+            bin_str[0:12], bin_str[12:17], bin_str[17:20], bin_str[20:25], bin_str[25:32]
+        )
+        lines.append("+--------------+-------+--------+-------+---------+")
+        lines.append("| imm[11:0]    | rs1   | funct3 | rd    | opcode  |")
+        lines.append("| [31:20]      | [19:15]| [14:12] | [11:7]| [6:0]   |")
+        lines.append("+--------------+-------+--------+-------+---------+")
+        lines.append(f"| {imm_b} | {rs1_b} | {f3_b}    | {rd_b} | {op_b} |")
+        lines.append(f"| ({parsed['imm']:<10}) | ({int(rs1_b,2):<4})| ({int(f3_b,2):<5}) | ({int(rd_b,2):<4})| ({int(op_b,2):<7})|")
+        lines.append("+--------------+-------+--------+-------+---------+")
+        lines.append("\n--- Explicación de los Campos ---")
+        lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para la categoría tipo I.")
+        lines.append(f"* rd (x{parsed['rd']} / {rd_b}): Registro destino del resultado o dato cargado.")
+        lines.append(f"* funct3 ({f3_b}): Selecciona la operación o tamaño de carga (lb, lw, addi, andi).")
+        lines.append(f"* rs1 (x{parsed['rs1']} / {rs1_b}): Registro fuente base.")
+        lines.append(f"* imm[11:0] ({imm_b} -> {parsed['imm']}): Inmediato con signo de 12 bits.")
+
+    elif fmt == "S":
+        imm_11_5_b, rs2_b, rs1_b, f3_b, imm_4_0_b, op_b = (
+            bin_str[0:7], bin_str[7:12], bin_str[12:17], bin_str[17:20], bin_str[20:25], bin_str[25:32]
+        )
+        lines.append("+----------+-------+-------+--------+-----------+---------+")
+        lines.append("| imm[11:5]| rs2   | rs1   | funct3 | imm[4:0]  | opcode  |")
+        lines.append("| [31:25]  | [24:20]| [19:15]| [14:12] | [11:7]    | [6:0]   |")
+        lines.append("+----------+-------+-------+--------+-----------+---------+")
+        lines.append(f"| {imm_11_5_b}  | {rs2_b} | {rs1_b} | {f3_b}    | {imm_4_0_b}     | {op_b} |")
+        lines.append(f"+----------+-------+-------+--------+-----------+---------+")
+        lines.append("\n--- Explicación de los Campos ---")
+        lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para instrucciones de almacenamiento (Store).")
+        lines.append(f"* imm[11:5] e imm[4:0]: Inmediato dividido que forma el desplazamiento ({parsed['imm']}).")
+        lines.append(f"* funct3 ({f3_b}): Especifica el tamaño de dato a guardar (sb, sw).")
+        lines.append(f"* rs1 (x{parsed['rs1']} / {rs1_b}): Registro base de dirección de memoria.")
+        lines.append(f"* rs2 (x{parsed['rs2']} / {rs2_b}): Registro que contiene el valor a guardar en memoria.")
+
+    elif fmt == "B":
+        imm12_b, imm10_5_b, rs2_b, rs1_b, f3_b, imm4_1_b, imm11_b, op_b = (
+            bin_str[0], bin_str[1:7], bin_str[7:12], bin_str[12:17], bin_str[17:20], bin_str[20:24], bin_str[24], bin_str[25:32]
+        )
+        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
+        lines.append("|i12|i[10:5] | rs2   | rs1   | funct3 |i[4:1]|i11| opcode  |")
+        lines.append("|31 | [30:25]| [24:20]| [19:15]| [14:12] |[11:8]| 7 | [6:0]   |")
+        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
+        lines.append(f"| {imm12_b} | {imm10_5_b} | {rs2_b} | {rs1_b} | {f3_b}    | {imm4_1_b} | {imm11_b} | {op_b} |")
+        lines.append("+---+--------+-------+-------+--------+------+---+---------+")
+        lines.append("\n--- Explicación de los Campos ---")
+        lines.append(f"* opcode ({op_b} / 0x{int(op_b,2):02x}): Opcode para saltos condicionales (Branch).")
+        lines.append(f"* Inmediato reordenado: Representa el desplazamiento relativo de salto ({parsed['imm']} bytes).")
+        lines.append(f"* funct3 ({f3_b}): Especifica la condición del salto (beq, bne).")
+        lines.append(f"* rs1 (x{parsed['rs1']} / {rs1_b}) y rs2 (x{parsed['rs2']} / {rs2_b}): Registros a comparar.")
+
+    return "\n".join(lines)
 
 
 def main():
