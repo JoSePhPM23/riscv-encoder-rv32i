@@ -1,0 +1,15 @@
+# Entorno virtual y caché de Python
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Archivos temporales de pruebas y ensamblado
+*.o
+*.elf
+*.bin
+temp_test.*
+
+# IDEs
+.vscode/
+.idea/
