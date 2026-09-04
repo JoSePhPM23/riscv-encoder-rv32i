@@ -1,2 +1,0 @@
-# Opcional: Librerías para mejorar el formato visual en la terminal
-rich>=13.0.0
