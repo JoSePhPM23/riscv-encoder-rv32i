@@ -159,7 +159,7 @@ riscv64-unknown-elf-objdump -d objeto.o -M numeric,no-aliases
 
 1. **Clonar repositorio e ingresar a la carpeta :**
 ```bash
-git clone [https://github.com/JoSePhPM23/riscv-encoder-rv32i.git](https://github.com/JoSePhPM23/riscv-encoder-rv32i.git)
+git clone https://github.com/JoSePhPM23/riscv-encoder-rv32i.git
 cd riscv-encoder-rv32i
 ```
 2. **Asignar permisos de ejecución al script :**
